@@ -1,0 +1,22 @@
+{
+  "name": "silken",
+  "version": "1.0.0",
+  "description": "Get number of the current request being served",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cooperhsiung/silken.git"
+  },
+  "keywords": [
+    "silken"
+  ],
+  "author": "Cooper Hsiung",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cooperhsiung/silken/issues"
+  },
+  "homepage": "https://github.com/cooperhsiung/silken#readme"
+}
