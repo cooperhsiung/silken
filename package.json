@@ -1,8 +1,11 @@
 {
   "name": "silken",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Get number of the current request being served",
   "main": "index.js",
+  "bin": {
+    "silk": "./bin/silk.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,5 +21,11 @@
   "bugs": {
     "url": "https://github.com/cooperhsiung/silken/issues"
   },
-  "homepage": "https://github.com/cooperhsiung/silken#readme"
+  "homepage": "https://github.com/cooperhsiung/silken#readme",
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "commander": "^2.19.0",
+    "pm2": "^3.4.0",
+    "request-promise": "^4.2.4"
+  }
 }
