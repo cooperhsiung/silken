@@ -1,99 +1,95 @@
 #!/usr/bin/env node
-const pm2 = require('pm2');
 const chalk = require('chalk');
 const program = require('commander');
-const request = require('request-promise');
+const http = require('follow-redirects').http;
 const { exec } = require('child_process');
+const pkg = require('../package');
 
 program
-  .option('restart <id>', 'restart pm2 app gracefully')
+  .version(pkg.version)
+  .option('restart <id>', 'restart app gracefully')
   .option('stop <id>', 'stop health check')
   .option('start <id>', 'start health check')
-  .option('status <id>', 'show status')
+  .option('show <id>', 'show status')
   .option('list', 'pm2 list')
   .parse(process.argv);
+
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}
 
 const cmd = program.rawArgs[2];
 const id = program.rawArgs[3];
 
-(async () => {
-  switch (cmd) {
-    case 'restart':
-      await restart(id);
-      break;
-    case 'stop':
-      await stop(id);
-      break;
-    case 'start':
-      await start(id);
-      break;
-    case 'status':
-      await status(id);
-      break;
-    case 'list':
-      exec('pm2 list', (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return;
-        }
-        stdout && console.log(`${stdout}`);
-        stderr && console.error(`${stderr}`);
-      });
-      break;
-    default:
-      console.log(chalk.yellow('unknown command, try `silk --help`'));
-  }
-})().catch(e => console.log(chalk.red(e)));
+switch (cmd) {
+  case 'restart':
+    restart(id);
+    break;
+  case 'stop':
+    stop(id);
+    break;
+  case 'start':
+    start(id);
+    break;
+  case 'show':
+    status(id);
+    break;
+  case 'list':
+    exec('pm2 list', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      stdout && console.log(`${stdout}`);
+      stderr && console.error(`${stderr}`);
+    });
+    break;
+  default:
+    console.log(chalk.yellow('Unknown command'));
+    program.outputHelp();
+}
 
 async function restart(id) {
   let srv = await getSrvById(id);
-  await request(srv + '/silken_stop');
-  let c = Number(await request(srv + '/silken_handling'));
+  await req(srv + '/silken_stop');
+  let c = Number(await req(srv + '/silken_handling'));
   while (c > 0) {
     await sleep();
-    c = Number(await request(srv + '/silken_handling'));
+    c = Number(await req(srv + '/silken_handling'));
     console.log(chalk.blue(`on handling: ${c}`));
   }
-  await pm2_restart(id);
+  await pm2Restart(id);
   await sleep(2000);
-  await request(srv + '/silken_start');
-  let h = await request(srv + '/health');
+  await req(srv + '/silken_start');
+  let h = await req(srv + '/health');
   console.log(chalk.green(h));
 }
 
 async function stop(id) {
   let srv = await getSrvById(id);
-  await request(srv + '/silken_stop');
+  await req(srv + '/silken_stop');
 }
 
 async function start(id) {
   let srv = await getSrvById(id);
-  await request(srv + '/silken_start');
-}
-
-async function health(id) {
-  let srv = await getSrvById(id);
-  return request(srv + '/health');
-}
-
-async function count(id) {
-  let srv = await getSrvById(id);
-  return request(srv + '/silken_handling');
+  await req(srv + '/silken_start');
 }
 
 async function status(id) {
   try {
     let srv = await getSrvById(id);
-    let h = await request(srv + '/health');
-    let c = await request(srv + '/silken_handling');
-    console.log(chalk.cyan(`health state: ${h}`));
-    console.log(chalk.blue(`on handling: ${c}`));
+    let h = await req(srv + '/health');
+    let c = await req(srv + '/silken_handling');
+    console.log(chalk.gray('----------------------------'));
+    console.log(chalk.gray('|'), chalk.cyan('health state'), chalk.gray('|'), chalk.green(h), chalk.gray('|'));
+    console.log(chalk.gray('|'), chalk.cyan('on handling '), chalk.gray('|'), c, chalk.gray('        |'));
+    console.log(chalk.gray('----------------------------'));
   } catch (e) {
     console.log(chalk.red(e.message));
   }
 }
 
-function pm2_restart(id) {
+function pm2Restart(id) {
   return new Promise(function(resolve, reject) {
     exec('pm2 restart ' + id, (error, stdout, stderr) => {
       if (error) {
@@ -110,25 +106,43 @@ function pm2_restart(id) {
 
 function getSrvById(id) {
   return new Promise(function(resolve, reject) {
-    pm2.connect(() => {
-      pm2.list((err, data) => {
-        pm2.disconnect();
-        if (err) {
-          return reject(err);
+    exec('pm2 jlist', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return reject(error);
+      }
+      stderr && console.error(`${stderr}`);
+      const data = JSON.parse(stdout);
+      let app = data.find(e => String(e.pm2_env.pm_id) === id);
+      if (app) {
+        let slice = app.name.split('-');
+        let port = slice[slice.length - 1];
+        if (isNaN(port)) {
+          return reject("service must end with '-<port>'");
         }
-        let app = data.find(e => e.pm2_env.pm_id == id);
-        if (app) {
-          let slice = app.name.split('-');
-          let port = slice[slice.length - 1];
-          if (isNaN(port)) {
-            return reject("service must end with '-<port>'");
-          }
-          resolve(`http://localhost:${port}`);
-        } else {
-          reject('service id `' + id + '` dose not exists');
-        }
-      });
+        resolve(`http://localhost:${port}`);
+      } else {
+        reject('service id `' + id + '` dose not exists');
+      }
     });
+  });
+}
+
+function req(url) {
+  return new Promise(function(resolve, reject) {
+    http
+      .get(url, res => {
+        let data = '';
+        res.on('data', chunk => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          resolve(data);
+        });
+      })
+      .on('error', err => {
+        console.log('Error: ' + err.message);
+      });
   });
 }
 
