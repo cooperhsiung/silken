@@ -60,7 +60,11 @@ async function restart(id) {
   }
   // await pm2Restart(id);
   pm2Restart(id);
-  await sleep(3000);
+  console.log('.');
+  await sleep(1000);
+  console.log('..');
+  await sleep(1000);
+  console.log('...');
   await req(srv + '/silken_start');
   let h = await req(srv + '/health');
   console.log(h.includes('stopped') ? chalk.red(h) : chalk.green(h));
