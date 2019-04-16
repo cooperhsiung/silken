@@ -58,11 +58,12 @@ async function restart(id) {
     c = Number(await req(srv + '/silken_handling'));
     console.log(chalk.blue(`on handling: ${c}`));
   }
-  await pm2Restart(id);
-  await sleep(2000);
+  // await pm2Restart(id);
+  pm2Restart(id);
+  await sleep(3000);
   await req(srv + '/silken_start');
   let h = await req(srv + '/health');
-  console.log(chalk.green(h));
+  console.log(h.includes('stopped') ? chalk.red(h) : chalk.green(h));
 }
 
 async function stop(id) {
@@ -81,7 +82,13 @@ async function status(id) {
     let h = await req(srv + '/health');
     let c = await req(srv + '/silken_handling');
     console.log(chalk.gray('----------------------------'));
-    console.log(chalk.gray('|'), chalk.cyan('health state'), chalk.gray('|'), chalk.green(h), chalk.gray('|'));
+    console.log(
+      chalk.gray('|'),
+      chalk.cyan('health state'),
+      chalk.gray('|'),
+      h.includes('stopped') ? chalk.red(h) : chalk.green(h),
+      chalk.gray('|')
+    );
     console.log(chalk.gray('|'), chalk.cyan('on handling '), chalk.gray('|'), c, chalk.gray('        |'));
     console.log(chalk.gray('----------------------------'));
   } catch (e) {
@@ -97,7 +104,7 @@ function pm2Restart(id) {
         reject(error);
         return;
       }
-      stdout && console.log(`${stdout}`);
+      // stdout && console.log(`${stdout}`);
       stderr && console.error(`${stderr}`);
       resolve();
     });
