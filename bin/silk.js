@@ -75,7 +75,7 @@ async function restart(id) {
   log.text = `start health check ...`;
   await req(srv + '/silken_start');
   await sleep(1000);
-  logUpdate(`√  restart [${id}] ok`);
+  logUpdate(`√  git `);
   clearInterval(looper);
   listTable(id);
 }

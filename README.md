@@ -1,38 +1,59 @@
 # Silken
 
 [![NPM Version][npm-image]][npm-url]
+[![Node Version][node-image]][node-url]
 
-Gracefully pm2 restart
+Gracefully restart tool binding with [`pm2`](https://pm2.io/) for Node.JS app.
 
 ## Installation
 
+in your application
+
 ```bash
 npm i silken -S
+```
+
+on your machine
+
+```
 npm i silken -g
 ```
 
 ## Usage
 
+in your application
+
 ```javascript
 const express = require('express');
 const app = express();
 app.use(silken(app));
-// app.use(silken(app, { path: 'get_number' }));
 ```
 
-then you can get number on handling by request `http://localhost:3000/silken_handling`
+on your machine
 
-### start app
+```
+Usage: silk [options]
 
-```bash
-silk start <id>
+Options:
+  -V, --version  output the version number
+  restart <id>   restart app gracefully
+  stop <id>      stop health check
+  start <id>     start health check
+  show <id>      show status
+  list           list all
+  list <id>      list by id
+  -h, --help     output usage information
 ```
 
-### restart app
+## Notes
 
-```bash
-silk restart <id>
-```
+You can replace `pm2 restart <id>` with `silk restart <id>`
+
+When you restart the app by silk
+
+it goes through "stop health check -> waiting for handling finished -> restart app -> start health check -> restart ok"
 
 [npm-image]: https://img.shields.io/npm/v/silken.svg
 [npm-url]: https://www.npmjs.com/package/silken
+[node-image]: https://img.shields.io/badge/node.js-%3E=8-brightgreen.svg
+[node-url]: https://nodejs.org/download/
