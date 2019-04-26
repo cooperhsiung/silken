@@ -112,7 +112,7 @@ async function status(id) {
 
 function pm2Restart(id) {
   return new Promise(function(resolve, reject) {
-    exec('pm2 restart ' + id, (error, stdout, stderr) => {
+    exec('pm2 restart ' + id, { maxBuffer: 1024 * 1000 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         reject(error);
@@ -127,7 +127,7 @@ function pm2Restart(id) {
 
 function getSrvById(id) {
   return new Promise(function(resolve, reject) {
-    exec('pm2 jlist', (error, stdout, stderr) => {
+    exec('pm2 jlist', { maxBuffer: 1024 * 1000 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         return reject(error);
@@ -201,7 +201,7 @@ async function fillSilkList(list) {
 
 function getPM2List(id) {
   return new Promise(function(resolve, reject) {
-    exec('pm2 jlist', (error, stdout, stderr) => {
+    exec('pm2 jlist', { maxBuffer: 1024 * 1000 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         return reject(error);
